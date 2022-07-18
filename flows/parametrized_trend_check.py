@@ -26,9 +26,6 @@ deploy_to_kubernetes(
     flow=check_trending_repos, parameters=dict(repo="keras"), name="keras"
 )
 
-# deploy_to_s3(check_trending_repos)
-# deploy_to_s3(check_trending_repos, parameters=dict(repo="keras"), name="keras")
-
 
 if __name__ == "__main__":
     check_trending_repos(repo="prefect")

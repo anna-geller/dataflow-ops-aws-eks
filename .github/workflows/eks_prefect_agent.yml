@@ -16,7 +16,7 @@ on:
       namespace:  # K8s namespace to which to deploy your agent = env = work-queue tag
         description: Namespace to which to deploy your agent
         required: true
-        default: 'prod'
+        default: 'prefect-prod-eks'
         type: string
       image:
         description: Prefect base image for your agent
@@ -59,6 +59,94 @@ jobs:
         run: prefect work-queue create ${{env.NAMESPACE_ENV}} -t ${{env.NAMESPACE_ENV}}
         continue-on-error: true  # work-queue can be created manually later
 
+  ecr-repo: # used by flows only; the agent uses default image
+    name: Create ECR repository, build and push the image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Create new ECR repository using AWS CloudFormation
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: "${{env.NAMESPACE_ENV}}-ecr"
+          template: infrastructure/create_ecr_repository.yml
+          parameter-overrides: "RepositoryName=${{env.NAMESPACE_ENV}}"
+          no-fail-on-empty-changeset: "1"
+      - name: Flow deployment finished
+        run: echo "ECR repository created at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$NAMESPACE_ENV:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$NAMESPACE_ENV:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$NAMESPACE_ENV:$IMAGE_TAG"
+      - name: Flow deployments finished
+        run: echo "ECR image $ECR_REGISTRY/$NAMESPACE_ENV:$IMAGE_TAG built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+
+  list-flows: # lists flow files - assumes Deployment is defined along with the flow code
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Summary
+        run: echo "### Workflow $GITHUB_WORKFLOW with GITHUB_SHA $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(ls flows/*.py | jq -R -s -c 'split("\n")[:-1]')"
+
+  deploy:
+    needs: list-flows
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flows: ${{ fromJson(needs.list-flows.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Python dependencies
+        run: |
+          pip install .
+          pip install -U "prefect>=2.0b"
+
+      - name: Prefect Cloud login
+        run: |
+          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY}} 
+          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL}}
+
+      - name: AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Deploy flows
+        run: prefect deployment create ${{ matrix.flows }}
+
+      - name: Flow deployments finished
+        run: echo "Flow deployments finished at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+
   prefect-agent-eks:
     name: EKS cluster & Prefect agent
     runs-on: ubuntu-latest
@@ -98,7 +186,7 @@ jobs:
               amiFamily: AmazonLinux2
               instanceType: ${{github.event.inputs.instance-type}}
               desiredCapacity: ${{github.event.inputs.nodes}}
-              maxSize: 1
+              maxSize: ${{github.event.inputs.nodes}}
               minSize: 1
               iam:
                 attachPolicy:

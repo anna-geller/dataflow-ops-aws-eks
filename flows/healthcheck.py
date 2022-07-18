@@ -1,6 +1,6 @@
 import prefect
 from prefect import flow, task, get_run_logger
-from prefect_dataops.deployments import deploy_to_kubernetes, deploy_to_s3
+from prefect_dataops.deployments import deploy_to_kubernetes
 
 
 @task
@@ -31,8 +31,6 @@ def healthcheck():
 
 
 deploy_to_kubernetes(flow=healthcheck)
-# deploy_to_s3(healthcheck)
-# deploy_to_s3(healthcheck, cron_schedule="*/2 * * * *")
 
 
 if __name__ == "__main__":
