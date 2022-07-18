@@ -27,5 +27,4 @@ jobs:
           echo "ekctl istalled with version: $(eksctl version)" >> $GITHUB_STEP_SUMMARY
 
       - name: Delete EKS cluster
-        run: eksctl delete cluster --name ${{env.EKS_CLUSTER}}
-  # or: eksctl delete cluster -f infrastructure/cluster.yml
+        run: eksctl delete cluster -f infrastructure/cluster.yml
