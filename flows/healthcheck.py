@@ -1,36 +1,24 @@
+import platform
 import prefect
-from prefect import flow, task, get_run_logger
-from prefect_dataops.deployments import deploy_to_kubernetes
-
-
-@task
-def say_hi():
-    logger = get_run_logger()
-    logger.info("Hello from the Health Check Flow! 👋")
+from prefect import task, flow, get_run_logger
+from prefect.orion.api.server import ORION_API_VERSION
+import sys
 
 
 @task
 def log_platform_info():
-    import platform
-    import sys
-    from prefect.orion.api.server import ORION_API_VERSION
-
     logger = get_run_logger()
     logger.info("Host's network name = %s", platform.node())
-    logger.info("OS/Architecture = %s/%s", sys.platform, platform.machine())
-    logger.info("Platform information (instance type) = %s 💻", platform.platform())
     logger.info("Python version = %s", platform.python_version())
-    logger.info("Prefect version = %s 🚀", prefect.__version__)
-    logger.info("Prefect API version = %s", ORION_API_VERSION)
+    logger.info("Platform information (instance type) = %s ", platform.platform())
+    logger.info("OS/Arch = %s/%s", sys.platform, platform.machine())
+    logger.info("Prefect Version = %s 🚀", prefect.__version__)
+    logger.info("Prefect API Version = %s", ORION_API_VERSION)
 
 
 @flow
 def healthcheck():
-    hi = say_hi()
-    log_platform_info(wait_for=[hi])
-
-
-deploy_to_kubernetes(flow=healthcheck)
+    log_platform_info()
 
 
 if __name__ == "__main__":

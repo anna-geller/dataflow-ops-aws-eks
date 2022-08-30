@@ -3,7 +3,7 @@ Description: Create ECR repository and lifecycle policy
 Parameters:
   RepositoryName:
     Type: String
-    Default: prefectdataops
+    Default: prod
 Resources:
   MyRepository:
     Type: AWS::ECR::Repository

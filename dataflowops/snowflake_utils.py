@@ -3,26 +3,26 @@ from sqlalchemy import create_engine
 
 
 def get_snowflake_connection_string(
-    user: str,
-    password: str,
-    account_id: str,
-    database: str = "DEV",
-    schema: str = "JAFFLE_SHOP",
-    warehouse_name: str = "COMPUTE_WH",
-    role: str = "SYSADMIN",
+        user: str,
+        password: str,
+        account_id: str,
+        database: str = "DEV",
+        schema: str = "JAFFLE_SHOP",
+        warehouse_name: str = "COMPUTE_WH",
+        role: str = "SYSADMIN",
 ) -> str:
     return f"snowflake://{user}:{password}@{account_id}/{database}/{schema}?warehouse={warehouse_name}&role={role}"
 
 
 def get_df_from_sql_query(
-    table_or_query: str,
-    user: str,
-    password: str,
-    account_id: str,
-    database: str = "DEV",
-    schema: str = "JAFFLE_SHOP",
-    warehouse_name: str = "COMPUTE_WH",
-    role: str = "SYSADMIN",
+        table_or_query: str,
+        user: str,
+        password: str,
+        account_id: str,
+        database: str = "DEV",
+        schema: str = "JAFFLE_SHOP",
+        warehouse_name: str = "COMPUTE_WH",
+        role: str = "SYSADMIN",
 ) -> pd.DataFrame:
     db = get_snowflake_connection_string(
         user, password, account_id, database, schema, warehouse_name, role
@@ -32,15 +32,15 @@ def get_df_from_sql_query(
 
 
 def load_df_to_snowflake(
-    df: pd.DataFrame,
-    table_name: str,
-    user: str,
-    password: str,
-    account_id: str,
-    database: str = "DEV",
-    schema: str = "JAFFLE_SHOP",
-    warehouse_name: str = "COMPUTE_WH",
-    role: str = "SYSADMIN",
+        df: pd.DataFrame,
+        table_name: str,
+        user: str,
+        password: str,
+        account_id: str,
+        database: str = "DEV",
+        schema: str = "JAFFLE_SHOP",
+        warehouse_name: str = "COMPUTE_WH",
+        role: str = "SYSADMIN",
 ) -> None:
     conn_string = get_snowflake_connection_string(
         user, password, account_id, database, schema, warehouse_name, role

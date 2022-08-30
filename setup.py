@@ -4,7 +4,7 @@ with open("requirements.txt") as install_requires_file:
     requirements = install_requires_file.read().strip().split("\n")
 
 setup(
-    name="prefect_dataops",
+    name="dataflowops",
     description="Custom modules for Prefect flows",
     license="Apache License 2.0",
     author="Prefect Community",

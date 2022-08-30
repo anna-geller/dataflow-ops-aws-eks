@@ -5,6 +5,9 @@ import sqlalchemy
 def get_db_connection_string(
     user: str, password: str, host: str = "localhost", db: str = "postgres"
 ) -> str:
+    """
+    Dummy function to validate imports
+    """
     return f"postgresql://{user}:{password}@{host}:5432/{db}"
 
 
