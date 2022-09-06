@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: agent
-  namespace: $NAMESPACE_ENV
+  namespace: prod
 spec:
   selector:
     matchLabels:
@@ -16,25 +16,25 @@ spec:
       containers:
         - name: agent
           image: your_image
-          command: ["prefect", "agent", "start", "-q", "QUEUE_NAME"]
+          command: ["prefect", "agent", "start", "-q", "prod"]
           imagePullPolicy: "IfNotPresent"
           env:
             - name: PREFECT_API_URL
               valueFrom:
                 secretKeyRef:
-                  name: $K8_SECRET_NAME
+                  name: prefect-secrets
                   key: api-url
             - name: PREFECT_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: $K8_SECRET_NAME
+                  name: prefect-secrets
                   key: api-key
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: agent
-  namespace: $NAMESPACE_ENV
+  namespace: prod
 rules:
   - apiGroups: [""]
     resources: ["pods", "pods/log", "pods/status"]
@@ -47,11 +47,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: agent
-  namespace: $NAMESPACE_ENV
+  namespace: prod
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: $NAMESPACE_ENV
+    namespace: prod
 roleRef:
   kind: Role
   name: agent
