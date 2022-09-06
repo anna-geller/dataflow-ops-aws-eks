@@ -12,7 +12,7 @@ env:
 
 jobs:
   changes:
-    name: Summary of flow and code dependency changes
+    name: Flow and code dependency changes
     runs-on: ubuntu-latest
     outputs:
       prefect_flows: ${{ steps.filter.outputs.flows_files }}
@@ -137,10 +137,9 @@ jobs:
         run: | 
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
           prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name cicd -q $NAMESPACE_ENV \
-          -sb s3/$NAMESPACE_ENV -ib kubernetes-job/$NAMESPACE_ENV -v $GITHUB_SHA -o $FLOW_NAME.yaml
-          prefect deployment apply $FLOW_NAME.yaml
+          -sb s3/$NAMESPACE_ENV -ib kubernetes-job/$NAMESPACE_ENV -v $GITHUB_SHA -o $FLOW_NAME.yaml --apply
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
-      - name: Upload task definition as artifact
+      - name: Upload deployment manifest as artifact
         uses: actions/upload-artifact@v3
         with:
           name: Deployment YAML manifests

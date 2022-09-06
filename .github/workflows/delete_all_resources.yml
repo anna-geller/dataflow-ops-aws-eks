@@ -32,7 +32,7 @@ jobs:
 
       - name: Delete EKS agent service
         continue-on-error: true
-        run: aws cloudformation delete-stack --stack-name ${{ env.PROJECT }}
+        run: aws cloudformation delete-stack --stack-name ${{ github.event.inputs.cloudformation-stack-name }}
 
       - name: All AWS resources deleted
         run: echo '### All AWS resources deleted! :tada:' >> $GITHUB_STEP_SUMMARY
