@@ -51,9 +51,9 @@ jobs:
       - name: Create new ECR repository using AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
-          name: "$NAMESPACE_ENV-ecr"
+          name: "${{ env.NAMESPACE_ENV }}-ecr"
           template: infrastructure/ecr_repository.yml
-          parameter-overrides: "RepositoryName=$NAMESPACE_ENV"
+          parameter-overrides: "RepositoryName=${{ env.NAMESPACE_ENV }}"
           no-fail-on-empty-changeset: "1"
 
       - name: Flow deployment finished
@@ -108,7 +108,7 @@ jobs:
           cat <<EOF > s3_block.py
           from prefect.filesystems import S3
           s3 = S3(bucket_path="${{ github.event.inputs.s3_path }}", aws_access_key_id="${{ secrets.AWS_ACCESS_KEY_ID }}", aws_secret_access_key="${{ secrets.AWS_SECRET_ACCESS_KEY }}")
-          s3.save("${{ env.NAMESPACE_ENV }}", overwrite=True)
+          s3.save("$NAMESPACE_ENV", overwrite=True)
           EOF
           python s3_block.py
       - name: Build KubernetesJob block
@@ -116,7 +116,7 @@ jobs:
           cat <<EOF > k8s_block.py
           from prefect.infrastructure import KubernetesJob
           k8s = KubernetesJob(image="${{ steps.build-image.outputs.image }}", namespace="$NAMESPACE_ENV", image_pull_policy="IfNotPresent")
-          k8s.save("${{ env.NAMESPACE_ENV }}", overwrite=True)
+          k8s.save("$NAMESPACE_ENV", overwrite=True)
           EOF
           python k8s_block.py
 
