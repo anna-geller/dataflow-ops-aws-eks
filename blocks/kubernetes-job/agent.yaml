@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent
+  namespace: $NAMESPACE_ENV
+spec:
+  selector:
+    matchLabels:
+      app: agent
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: agent
+    spec:
+      containers:
+        - name: agent
+          image: your_image
+          command: ["prefect", "agent", "start", "-q", "QUEUE_NAME"]
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: PREFECT_API_URL
+              valueFrom:
+                secretKeyRef:
+                  name: $K8_SECRET_NAME
+                  key: api-url
+            - name: PREFECT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: $K8_SECRET_NAME
+                  key: api-key
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: agent
+  namespace: $NAMESPACE_ENV
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: agent
+  namespace: $NAMESPACE_ENV
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: $NAMESPACE_ENV
+roleRef:
+  kind: Role
+  name: agent
+  apiGroup: rbac.authorization.k8s.io
