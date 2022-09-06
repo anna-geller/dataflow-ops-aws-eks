@@ -2,11 +2,12 @@ name: 3 Delete EKS Cluster, Prefect agent and ECR repository
 
 on:
   workflow_dispatch:
-    cloudformation-stack-name:
-      description: Look up the stack name via AWS Console or CLI
-      required: true
-      default: 'eksctl-prefect-cluster'
-      type: string
+    inputs:
+      cloudformation-stack-name:
+        description: Look up the stack name via AWS Console or CLI
+        required: true
+        default: 'eksctl-prefect-cluster'
+        type: string
 env:
   PROJECT: prod
 
