@@ -104,7 +104,6 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Build S3 block
-        id: s3
         run: |
           cat <<EOF > s3_block.py
           from prefect.filesystems import S3
@@ -113,7 +112,6 @@ jobs:
           EOF
           python s3_block.py
       - name: Build KubernetesJob block
-        id: s3
         run: |
           cat <<EOF > k8s_block.py
           from prefect.infrastructure import KubernetesJob
