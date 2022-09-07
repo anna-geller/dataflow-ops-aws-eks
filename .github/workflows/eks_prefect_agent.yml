@@ -27,11 +27,17 @@ on:
         required: true
         default: '2.*'
         type: string
+      aws-region:
+        description: AWS Region to deploy all resources to
+        required: true
+        default: 'us-east-1'
+        type: string
 env:
   EKS_CLUSTER: prefect
   NAMESPACE_ENV: prod
   K8_SECRET_NAME: prefect-secrets
   PREFECT_VERSION: ${{ github.event.inputs.prefect-version }}
+  AWS_DEFAULT_REGION: ${{ github.event.inputs.aws-region }}
 
 jobs:
   ecr-repo: # used by flows only; the agent uses image provided as input above
@@ -48,7 +54,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
           mask-aws-account-id: 'no'
 
       - name: Create new ECR repository using AWS CloudFormation
@@ -106,7 +112,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
           mask-aws-account-id: 'no'
 
       - name: Build S3 block
@@ -171,7 +177,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
           mask-aws-account-id: 'no'
 
       - name: Deploy flows to S3
@@ -199,7 +205,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
           mask-aws-account-id: 'no'
 
       - name: Install eksctl
@@ -217,7 +223,7 @@ jobs:
           
           metadata:
             name: ${{env.EKS_CLUSTER}}
-            region: ${{ secrets.AWS_DEFAULT_REGION }}
+            region: ${{ env.AWS_DEFAULT_REGION }}
           
           iam:
             withOIDC: true
