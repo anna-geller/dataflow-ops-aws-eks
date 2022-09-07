@@ -25,18 +25,25 @@ jobs:
         run: |
           aws ecr delete-repository --repository-name ${{ env.PROJECT }} --force
           aws cloudformation delete-stack --stack-name "${{ env.PROJECT }}-ecr"
+          aws cloudformation wait stack-delete-complete --stack-name "${{ env.PROJECT }}-ecr"
 
       - name: Delete EKS node group
         continue-on-error: true
-        run: aws cloudformation delete-stack --stack-name eksctl-prefect-nodegroup-prefect-ng-1
+        run: |
+          aws cloudformation delete-stack --stack-name eksctl-prefect-nodegroup-prefect-ng-1
+          aws cloudformation wait stack-delete-complete --stack-name eksctl-prefect-nodegroup-prefect-ng-1
 
       - name: Delete EKS IAM service account
         continue-on-error: true
-        run: aws cloudformation delete-stack --stack-name eksctl-prefect-addon-iamserviceaccount-kube-system-aws-node
+        run: |
+          aws cloudformation delete-stack --stack-name eksctl-prefect-addon-iamserviceaccount-kube-system-aws-node
+          aws cloudformation wait stack-delete-complete --stack-name eksctl-prefect-addon-iamserviceaccount-kube-system-aws-node
 
       - name: Delete EKS agent service
         continue-on-error: true
-        run: aws cloudformation delete-stack --stack-name eksctl-prefect-cluster
+        run: |
+          aws cloudformation delete-stack --stack-name eksctl-prefect-cluster
+          aws cloudformation wait stack-delete-complete --stack-name eksctl-prefect-cluster
 
       - name: All AWS resources deleted
-        run: echo '### All AWS resources deleted! :tada:' >> $GITHUB_STEP_SUMMARY
+        run: echo 'All AWS resources deleted! :rocket:' >> $GITHUB_STEP_SUMMARY
