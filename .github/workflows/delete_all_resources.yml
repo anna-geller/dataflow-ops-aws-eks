@@ -2,12 +2,7 @@ name: 3 Delete EKS Cluster, Prefect agent and ECR repository
 
 on:
   workflow_dispatch:
-    inputs:
-      cloudformation-stack-name:
-        description: Look up the stack name via AWS Console or CLI
-        required: true
-        default: 'eksctl-prefect-cluster'
-        type: string
+
 env:
   PROJECT: prod
 
@@ -31,9 +26,17 @@ jobs:
           aws ecr delete-repository --repository-name ${{ env.PROJECT }} --force
           aws cloudformation delete-stack --stack-name "${{ env.PROJECT }}-ecr"
 
+      - name: Delete EKS node group
+        continue-on-error: true
+        run: aws cloudformation delete-stack --stack-name eksctl-prefect-nodegroup-prefect-ng-1
+
+      - name: Delete EKS IAM service account
+        continue-on-error: true
+        run: aws cloudformation delete-stack --stack-name eksctl-prefect-addon-iamserviceaccount-kube-system-aws-node
+
       - name: Delete EKS agent service
         continue-on-error: true
-        run: aws cloudformation delete-stack --stack-name ${{ github.event.inputs.cloudformation-stack-name }}
+        run: aws cloudformation delete-stack --stack-name eksctl-prefect-cluster
 
       - name: All AWS resources deleted
         run: echo '### All AWS resources deleted! :tada:' >> $GITHUB_STEP_SUMMARY

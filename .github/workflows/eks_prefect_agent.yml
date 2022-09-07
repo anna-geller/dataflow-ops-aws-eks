@@ -16,7 +16,7 @@ on:
       image:
         description: Prefect base image for your agent
         required: true
-        default: 'prefecthq/prefect:2-python3.9'
+        default: 'prefecthq/prefect:2-python3.10'
         type: string
       s3_path:
         description: S3 path in the format bucket/path
@@ -73,8 +73,9 @@ jobs:
           docker build -t $ECR_REGISTRY/$NAMESPACE_ENV:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$NAMESPACE_ENV:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$NAMESPACE_ENV:$IMAGE_TAG"
+
       - name: Flow deployments finished
-        run: echo "ECR image $ECR_REGISTRY/$NAMESPACE_ENV:$IMAGE_TAG built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
+        run: echo "ECR image ${{ steps.build-image.outputs.image }} built at $(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_STEP_SUMMARY
 
   blocks:
     name: Create blocks
@@ -111,17 +112,20 @@ jobs:
           cat <<EOF > s3_block.py
           from prefect.filesystems import S3
           s3 = S3(bucket_path="${{ github.event.inputs.s3_path }}", aws_access_key_id="${{ secrets.AWS_ACCESS_KEY_ID }}", aws_secret_access_key="${{ secrets.AWS_SECRET_ACCESS_KEY }}")
-          s3.save("$NAMESPACE_ENV", overwrite=True)
+          s3.save("${{ env.NAMESPACE_ENV }}", overwrite=True)
           EOF
           python s3_block.py
       - name: Build KubernetesJob block
         run: |
           cat <<EOF > k8s_block.py
           from prefect.infrastructure import KubernetesJob
-          k8s = KubernetesJob(image="${{ needs.ecr-repo.outputs.image }}", namespace="$NAMESPACE_ENV", image_pull_policy="IfNotPresent")
-          k8s.save("$NAMESPACE_ENV", overwrite=True)
+          k8s = KubernetesJob(image="${{ needs.ecr-repo.outputs.image }}", namespace="${{ env.NAMESPACE_ENV }}", 
+          customizations=[{"op": "add", "path": "/spec/ttlSecondsAfterFinished", "value": 10}], image_pull_policy="IfNotPresent")
+          k8s.save("${{ env.NAMESPACE_ENV }}", overwrite=True)
           EOF
           python k8s_block.py
+      - name: Summary
+        run: echo 'Blocks created successfully! :duck:' >> $GITHUB_STEP_SUMMARY
 
   list-flows:
     runs-on: ubuntu-latest
@@ -171,8 +175,8 @@ jobs:
         id: build
         run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name cicd -q $NAMESPACE_ENV \
-          -sb s3/$NAMESPACE_ENV -ib kubernetes-job/$NAMESPACE_ENV -v $GITHUB_SHA -o $FLOW_NAME.yaml --apply
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name cicd -q ${{ env.NAMESPACE_ENV }} \
+          -sb s3/${{ env.NAMESPACE_ENV }} -ib kubernetes-job/${{ env.NAMESPACE_ENV }} -v $GITHUB_SHA -o $FLOW_NAME.yaml --apply
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
       - name: Upload deployment manifest as artifact
@@ -240,15 +244,15 @@ jobs:
 
       - name: Create Kubernetes resources
         run: |
-          kubectl create namespace $NAMESPACE_ENV
-          kubectl config set-context --current --namespace=$NAMESPACE_ENV
+          kubectl create namespace ${{ env.NAMESPACE_ENV }}
+          kubectl config set-context --current --namespace=${{ env.NAMESPACE_ENV }}
           kubectl create secret generic $K8_SECRET_NAME --from-literal=api-key=${{secrets.PREFECT_API_KEY}} --from-literal=api-url=${{secrets.PREFECT_API_URL}}
           cat <<EOF | kubectl apply -f -
           apiVersion: apps/v1
           kind: Deployment
           metadata:
             name: agent
-            namespace: $NAMESPACE_ENV
+            namespace: ${{ env.NAMESPACE_ENV }}
           spec:
             selector:
               matchLabels:
@@ -262,25 +266,25 @@ jobs:
                 containers:
                   - name: agent
                     image: ${{github.event.inputs.image}}
-                    command: ["prefect", "agent", "start", "-q", "$NAMESPACE_ENV"]
+                    command: ["prefect", "agent", "start", "-q", "${{ env.NAMESPACE_ENV }}"]
                     imagePullPolicy: "IfNotPresent"
                     env:
                       - name: PREFECT_API_URL
                         valueFrom:
                           secretKeyRef:
-                            name: $K8_SECRET_NAME
+                            name: ${{ env.K8_SECRET_NAME }}
                             key: api-url
                       - name: PREFECT_API_KEY
                         valueFrom:
                           secretKeyRef:
-                            name: $K8_SECRET_NAME
+                            name: ${{ env.K8_SECRET_NAME }}
                             key: api-key
           ---
           apiVersion: rbac.authorization.k8s.io/v1
           kind: Role
           metadata:
             name: agent
-            namespace: $NAMESPACE_ENV
+            namespace: ${{ env.NAMESPACE_ENV }}
           rules:
             - apiGroups: [""]
               resources: ["pods", "pods/log", "pods/status"]
@@ -293,11 +297,11 @@ jobs:
           kind: RoleBinding
           metadata:
             name: agent
-            namespace: $NAMESPACE_ENV
+            namespace: ${{ env.NAMESPACE_ENV }}
           subjects:
             - kind: ServiceAccount
               name: default
-              namespace: $NAMESPACE_ENV
+              namespace: ${{ env.NAMESPACE_ENV }}
           roleRef:
             kind: Role
             name: agent
