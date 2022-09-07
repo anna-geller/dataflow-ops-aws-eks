@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       nodes:
-        description: Number of nodes for the AWS EKS cluster
+        description: Number of EKS nodes
         required: true
         default: '1'
         type: string
       instance-type:
-        description: EC2 instance type for worker nodes
+        description: EC2 instance type
         required: true
         default: 'm5.large'
         type: string
@@ -23,12 +23,12 @@ on:
         required: true
         default: 'prefect-orion/prod'
       prefect-version:
-        description: Prefect version for flows - default is latest
+        description: Prefect version for flows
         required: true
         default: '2.*'
         type: string
       aws-region:
-        description: AWS Region to deploy all resources to
+        description: AWS Region
         required: true
         default: 'us-east-1'
         type: string
