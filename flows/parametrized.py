@@ -1,6 +1,6 @@
 from prefect import task, flow
 from prefect import get_run_logger
-from prefect.orion.schemas.schedules import CronSchedule
+
 
 @task
 def say_hi(user_name: str, answer: int) -> None:
