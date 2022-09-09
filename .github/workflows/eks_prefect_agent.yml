@@ -184,8 +184,8 @@ jobs:
         id: build
         run: |
           FLOW_NAME=$(basename ${{ matrix.flows }} .py)
-          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name cicd -q ${{ env.NAMESPACE_ENV }} \
-          -sb s3/${{ env.NAMESPACE_ENV }} -ib kubernetes-job/${{ env.NAMESPACE_ENV }} -v $GITHUB_SHA -o $FLOW_NAME.yaml --apply
+          prefect deployment build ${{ matrix.flows }}:$FLOW_NAME --name ${{ env.NAMESPACE_ENV }} -q ${{ env.NAMESPACE_ENV }} \
+          -sb s3/${{ env.NAMESPACE_ENV }} -ib kubernetes-job/${{ env.NAMESPACE_ENV }} -a -v $GITHUB_SHA -o $FLOW_NAME.yaml
           echo ::set-output name=flow_manifest::$FLOW_NAME.yaml
 
       - name: Upload deployment manifest as artifact
