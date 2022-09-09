@@ -92,3 +92,7 @@ prefect deployment set-schedule healthcheck/prod --timezone 'Europe/Berlin' --rr
 prefect deployment build -n prod -q prod -sb github/main -a flows/healthcheck.py:healthcheck
 prefect deployment build -n prod -q prod -sb github/main -a flows/parametrized.py:parametrized
 prefect deployment build -n prod -q prod -sb github/main -a flows/hello.py:hello
+
+# rrule without and with a timezone
+prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule '{"rrule": "DTSTART:20220910T110000\nRRULE:FREQ=HOURLY;BYDAY=MO,TU,WE,TH,FR,SA;BYHOUR=9,10,11,12,13,14,15,16,17"}'
+prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule '{"rrule": "DTSTART:20220910T110000\nRRULE:FREQ=HOURLY;BYDAY=MO,TU,WE,TH,FR,SA;BYHOUR=9,10,11,12,13,14,15,16,17", "timezone": "Europe/Berlin"}'
