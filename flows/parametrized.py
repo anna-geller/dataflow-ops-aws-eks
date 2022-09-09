@@ -15,4 +15,4 @@ def parametrized(user: str = "Marvin", answer: int = 42) -> None:
 
 
 if __name__ == "__main__":
-    parametrized(user="Anna")
+    parametrized(user="World")
