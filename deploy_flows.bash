@@ -76,27 +76,19 @@ prefect deployment build -n prod -q prod -a flows/parametrized.py:parametrized -
 # daily at 9 AM but only for the next 7 days (e.g. some campaign)
 prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule 'RRULE:FREQ=DAILY;COUNT=7;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9'
 
-prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule 'DTSTART:20220909T110000\nRRULE:FREQ=DAILY;COUNT=7;BYDAY=MO,TU,WE,TH,FR'
+# only during business hours
+prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule "FREQ=HOURLY;BYDAY=MO,TU,WE,TH,FR,SA;BYHOUR=9,10,11,12,13,14,15,16,17"
+
 # ---------------------------------------------------------------
 # Set schedule in a separate command after build
 prefect deployment set-schedule parametrized/prod --interval 300
-prefect deployment set-schedule parametrized/prod --cron "*/1 * * * *"
+prefect deployment set-schedule parametrized/prod --cron "*/1 * * * *"  # UTC
 prefect deployment set-schedule parametrized/prod --cron '15 20 * * WED' --timezone 'Europe/Berlin'
 prefect deployment set-schedule healthcheck/prod --timezone 'Europe/Berlin' --rrule 'RRULE:FREQ=DAILY;COUNT=7;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9'
-prefect deployment set-schedule healthcheck/prod --timezone 'Europe/Berlin' --rrule 'DTSTART:20220909T110000\nRRULE:FREQ=DAILY;COUNT=7;BYDAY=MO,TU,WE,TH,FR'
-
-# to create flow runs from that deployment every hour but only during business hours.
-prefect deployment build flows/healthcheck.py:healthcheck --name rrule -q prod --tag myproject -o deploy/rrule.yaml --rrule "FREQ=HOURLY;BYDAY=MO,TU,WE,TH,FR,SA;BYHOUR=9,10,11,12,13,14,15,16,17"
-
-# GH
-python blocks/github.py
-prefect deployment build flows/healthcheck.py:healthcheck --name gh -q prod -sb github/main -o gh.yaml --apply
-prefect deployment build flows/hello.py:hello --name gh -q prod -sb github/main -o gh2.yaml --apply
-
-pd build flows/healthcheck.py:healthcheck -n noupload -q prod -sb s3/prod -o deploy/noupload.yaml --skip-upload --apply
 
 
-# rrule
-prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule "DTSTART:20220909T110000\nRRULE:FREQ=DAILY;COUNT=7;BYDAY=MO,TU,WE,TH,FR"
-prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule '{"rrule": "DTSTART:20220909T110000\nRRULE:FREQ=DAILY;COUNT=7;BYDAY=MO,TU,WE,TH,FR"}'
-prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule '{"rrule": "DTSTART:20220909T110000\nRRULE:FREQ=DAILY;COUNT=7;BYDAY=MO,TU,WE,TH,FR", "timezone": "Europe/Berlin"}'
+# ---------------------------------------------------------------
+# GitHub storage
+prefect deployment build -n prod -q prod -sb github/main -a flows/healthcheck.py:healthcheck
+prefect deployment build -n prod -q prod -sb github/main -a flows/parametrized.py:parametrized
+prefect deployment build -n prod -q prod -sb github/main -a flows/hello.py:hello
