@@ -82,7 +82,11 @@ prefect deployment build -n prod -q prod -a flows/hello.py:hello --rrule "FREQ=H
 # ---------------------------------------------------------------
 # Set schedule in a separate command after build
 prefect deployment set-schedule parametrized/prod --interval 300
+prefect deployment set-schedule parametrized/prod --interval 300 --timezone 'America/New_York'
 prefect deployment set-schedule parametrized/prod --cron "*/1 * * * *"  # UTC
+prefect deployment set-schedule parametrized/prod --cron "*/1 * * * *"  --timezone 'Europe/Berlin'
+prefect deployment set-schedule parametrized/prod --cron "*/1 * * * *"  --timezone 'Europe/Berlin' --day_or False
+prefect deployment set-schedule parametrized/prod --cron "*/1 * * * *"  --timezone 'Europe/Berlin' --day_or false # works too
 prefect deployment set-schedule parametrized/prod --cron '15 20 * * WED' --timezone 'Europe/Berlin'
 prefect deployment set-schedule healthcheck/prod --timezone 'Europe/Berlin' --rrule 'RRULE:FREQ=DAILY;COUNT=7;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9'
 
