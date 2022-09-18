@@ -104,8 +104,8 @@ jobs:
 
       - name: Prefect Cloud login
         run: |
-          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY}} 
-          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL}}
+          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }} 
+          prefect cloud workspace set --workspace "${{ secrets.PREFECT_WORKSPACE }}"
 
       - name: AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -169,8 +169,8 @@ jobs:
 
       - name: Prefect Cloud login
         run: |
-          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY}} 
-          prefect config set PREFECT_API_URL=${{ secrets.PREFECT_API_URL}}
+          prefect config set PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }} 
+          prefect cloud workspace set --workspace "${{ secrets.PREFECT_WORKSPACE }}"
 
       - name: AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -256,7 +256,7 @@ jobs:
         run: |
           kubectl create namespace ${{ env.NAMESPACE_ENV }}
           kubectl config set-context --current --namespace=${{ env.NAMESPACE_ENV }}
-          kubectl create secret generic $K8_SECRET_NAME --from-literal=api-key=${{secrets.PREFECT_API_KEY}} --from-literal=api-url=${{secrets.PREFECT_API_URL}}
+          kubectl create secret generic $K8_SECRET_NAME --from-literal=api-key=${{ secrets.PREFECT_API_KEY }} --from-literal=api-url=${{secrets.PREFECT_API_URL}}
           cat <<EOF | kubectl apply -f -
           apiVersion: apps/v1
           kind: Deployment
