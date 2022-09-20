@@ -1,22 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agent
-  namespace: prod
+  name: prefect-agent
+  namespace: default
+  labels:
+    app: prefect-agent
 spec:
   selector:
     matchLabels:
-      app: agent
+      app: prefect-agent
   replicas: 1
   template:
     metadata:
       labels:
-        app: agent
+        app: prefect-agent
     spec:
       containers:
         - name: agent
-          image: your_image
-          command: ["prefect", "agent", "start", "-q", "prod"]
+          image: prefecthq/prefect:2-python3.10
+          command: ["prefect", "agent", "start", "-q", "kubernetes"]
           imagePullPolicy: "IfNotPresent"
           env:
             - name: PREFECT_API_URL
@@ -33,8 +35,8 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: agent
-  namespace: prod
+  name: prefect-agent
+  namespace: default
 rules:
   - apiGroups: [""]
     resources: ["pods", "pods/log", "pods/status"]
@@ -46,13 +48,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: agent
-  namespace: prod
+  name: prefect-agent-role-binding
+  namespace: default
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: prod
+    namespace: default
 roleRef:
   kind: Role
-  name: agent
+  name: prefect-agent
   apiGroup: rbac.authorization.k8s.io
